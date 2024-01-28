@@ -1,0 +1,50 @@
+parameters:
+- name: imageTag
+  displayName: Image Tag
+  type: string
+
+variables:
+  - group: dev-variable-group
+
+stages:
+- stage: Build
+  displayName: Build
+  jobs:
+  - job: Build
+    displayName: Build
+    steps:
+    - task: Docker@2
+      inputs:
+        containerRegistry: $(acrServiceConnection)
+        command: buildAndPush
+        repository: $(imageRepository)
+        Dockerfile: $(Build.SourcesDirectory)/src/api/Dockerfile
+        tags: |
+          ${{ parameters.imageTag }}
+    - task: PublishPipelineArtifact@1
+      inputs:
+        artifactName: 'manifests'
+        path: 'manifests'
+
+- stage: Deploy
+  displayName: Deploy stage
+  dependsOn: Build
+  jobs:
+  - deployment: Deploy
+    displayName: Deploy job
+    environment: dev
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: KubernetesManifest@0
+            displayName: Deploy to Kubernetes cluster
+            inputs:
+              action: deploy
+              kubernetesServiceConnection: $(k8sServiceConnection)
+              manifests: |
+                $(Agent.BuildDirectory)/manifests/deployment.yml
+                $(Agent.BuildDirectory)/manifests/service.yml
+                $(Agent.BuildDirectory)/manifests/ingress.yml
+              containers: |
+                $(registryName).azurecr.io/myapi:${{ parameters.imageTag }}
