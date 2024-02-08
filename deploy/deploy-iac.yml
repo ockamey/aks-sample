@@ -1,0 +1,25 @@
+trigger:
+  batch: true
+  branches:
+    include:
+      - main
+
+variables:
+  location: uksouth
+  artifactName: drop
+  rgNameDev: 
+
+stages:
+  # Lint IaC Code, Build and Publish parameters
+  # Building Params required due to not supporting bicepparam by ARM Deployement task
+  - template: templates/lintAndBuildParams.yml
+    parameters:
+      artifactName: $(artifactName)
+
+  # Validate & Deploy to DEV
+  - template: templates/deploy.yml
+    parameters:
+      env: dev
+      rgName: $(rgNameDev)
+      artifactName: $(artifactName)
+      location: $(location)

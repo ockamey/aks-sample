@@ -1,0 +1,54 @@
+parameters:
+  - name: env
+    type: string
+    values:
+      - dev
+      - prd
+  - name: rgName
+    type: string
+  - name: artifactName
+    type: string
+  - name: location
+    type: string
+
+stages:
+  - stage: Deploy_${{ parameters.env }}
+    displayName: Deploy ${{ parameters.env }}
+    jobs:
+      - deployment: VidateAndDeploy
+        displayName: Validate & Deploy
+        workspace:
+          clean: all
+        environment: ${{ parameters.env }}
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                - download: current
+                  name: DownloadParams
+                  displayName: Download Params
+                  artifact: ${{ parameters.artifactName }}
+                  patterns: |
+                    **/main.${{ parameters.env }}.json
+                - task: AzureResourceManagerTemplateDeployment@3
+                  name: RunPreflightValidation
+                  displayName: Run Preflight Validation
+                  inputs:
+                    connectedServiceName: ServiceConnectionDTA
+                    location: ${{ parameters.location }}
+                    deploymentMode: Validation
+                    resourceGroupName: ${{ parameters.rgName }}
+                    csmFile: iac/main.bicep
+                    csmParametersFile: $(Pipeline.Workspace)/${{ parameters.artifactName }}/main.${{ parameters.env }}.json
+                - task: AzureResourceManagerTemplateDeployment@3
+                  name: Deploy
+                  displayName: Deploy
+                  inputs:
+                    connectedServiceName: ServiceConnectionDTA
+                    deploymentName: $(Build.BuildNumber)
+                    location: ${{ parameters.location }}
+                    resourceGroupName: ${{ parameters.rgName }}
+                    deploymentMode: Complete
+                    csmFile: iac/main.bicep
+                    csmParametersFile: $(Pipeline.Workspace)/${{ parameters.artifactName }}/main.${{ parameters.env }}.json

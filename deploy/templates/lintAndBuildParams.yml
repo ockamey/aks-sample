@@ -1,0 +1,22 @@
+parameters:
+  - name: artifactName
+    type: string
+
+stages:
+  - stage: LintAndBuildParams
+    displayName: Lint and Build Params
+    jobs:
+      - job: LintAndBuildParams
+        displayName: Validate and Build Params
+        workspace:
+          clean: all
+        steps:
+          - script: |
+              az bicep build --file iac/main.bicep
+            name: LintCode
+            displayName: Lint Code
+          - template: buildParams.yml
+            parameters:
+              env: dev
+          - publish: $(System.DefaultWorkingDirectory)/iac/params/
+            artifact: ${{ parameters.artifactName }}

@@ -1,0 +1,9 @@
+parameters:
+  - name: env
+    type: string
+
+steps:
+  - script: |
+      bicep build-params iac/params/main.${{ parameters.env }}.bicepparam
+    name: BuildParams_${{ parameters.env }}
+    displayName: Build ${{ parameters.env }} Params
