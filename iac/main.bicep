@@ -33,3 +33,11 @@ resource aks 'Microsoft.ContainerService/managedClusters@2023-11-01' = {
     ]
   }
 }
+
+module acrRbacModule 'modules/acrRbac.bicep' = {
+  name: 'acrRbacModule-${deployment().name}'
+  params: {
+    acrName: acr.name
+    principalId: aks.properties.identityProfile.kubeletidentity.objectId
+  }
+}
