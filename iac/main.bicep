@@ -17,7 +17,16 @@ resource aks 'Microsoft.ContainerService/managedClusters@2023-11-01' = {
     type: 'SystemAssigned'
   }
   properties: {
+    autoUpgradeProfile: {
+      upgradeChannel: 'patch'
+    }
     dnsPrefix: '${clusterName}-dns'
+    aadProfile: {
+      managed: true
+      enableAzureRBAC: true
+    }
+    enableRBAC: true
+    disableLocalAccounts: true
     agentPoolProfiles: [
       {
         name: 'agentpool'
