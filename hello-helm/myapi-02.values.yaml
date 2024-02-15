@@ -1,0 +1,5 @@
+deployment:
+  image: acrdevuks.azurecr.io/myapi
+  tag: 1.0.9
+  env_var: test2
+name: myapi-02
