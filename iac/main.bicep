@@ -48,10 +48,22 @@ resource aks 'Microsoft.ContainerService/managedClusters@2023-08-02-preview' = {
   }
 }
 
-module acrRbacModule 'modules/acrRbac.bicep' = {
-  name: 'acrRbacModule-${deployment().name}'
+module acrPullRoleAssignmentModule 'modules/acrRbac.bicep' = {
+  name: 'acrPullRoleAssignmentModule-${deployment().name}'
   params: {
     acrName: acr.name
+    roleId: '7f951dda-4ed3-4680-a7ca-43fe172d538d' //AcrPull
     principalId: aks.properties.identityProfile.kubeletidentity.objectId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+module aksRbacClusterAdminRoleAssignmentModule 'modules/aksRbac.bicep' = {
+  name: 'aksRbacClusterAdminRoleAssignmentModule-${deployment().name}'
+  params: {
+    aksName: aks.name
+    roleId: 'b1ff04bb-8a4e-4dc4-8eb5-8693973ce19b' // Azure Kubernetes Service RBAC Cluster Admin
+    principalId: '0a97ce96-3a13-4d64-86aa-cbb0f5c014ab' // AKS Admin Group Object Id
+    principalType: 'Group'
   }
 }
