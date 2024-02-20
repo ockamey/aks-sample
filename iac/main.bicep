@@ -10,7 +10,7 @@ resource acr 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
   }
 }
 
-resource aks 'Microsoft.ContainerService/managedClusters@2023-11-01' = {
+resource aks 'Microsoft.ContainerService/managedClusters@2023-08-02-preview' = {
   name: clusterName
   location: location
   identity: {
@@ -40,6 +40,11 @@ resource aks 'Microsoft.ContainerService/managedClusters@2023-11-01' = {
         maxPods: 110
       }
     ]
+    ingressProfile: {
+      webAppRouting: {
+        enabled: true
+      }
+    }
   }
 }
 
