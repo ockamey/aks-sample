@@ -1,0 +1,10 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namePrefix: dev-
+namespace: dev
+images:
+- name: myapi
+  newName: acrdevuks001.azurecr.io/myapi
+  newTag: 1.0.0
+resources:
+- ../base

@@ -1,0 +1,33 @@
+apiVersion : apps/v1
+kind: Deployment
+metadata:
+  name: myapi 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: myapi
+  template:
+    metadata:
+      labels:
+        app: myapi 
+    spec:
+      containers:
+        - name: myapi 
+          image: myapi
+          ports:
+          - containerPort: 8080
+          env:
+          - name: ENV_VAR
+            valueFrom:
+              configMapKeyRef:
+                name: myapi
+                key: env_var
+          resources:
+            limits:
+              memory: "200Mi"
+              cpu: "50m"
+            requests:
+              memory: "40Mi"
+              cpu: "5m"
+            
