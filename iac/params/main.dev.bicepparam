@@ -1,5 +1,7 @@
 using '../main.bicep'
 
-param clusterName = ''
-param acrName = ''
+param clusterName = 'aks-dev-uks-001'
+param acrName = 'acrdevuks001'
 param location = 'uksouth'
+param fluxGitRepositoryUrl = ''
+param fluxGitRepositoryPat = ''

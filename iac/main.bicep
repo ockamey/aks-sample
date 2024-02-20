@@ -1,6 +1,9 @@
 param clusterName string
 param acrName string
 param location string = resourceGroup().location
+param fluxGitRepositoryUrl string
+@secure()
+param fluxGitRepositoryPat string
 
 resource acr 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
   name: acrName
@@ -43,6 +46,45 @@ resource aks 'Microsoft.ContainerService/managedClusters@2023-08-02-preview' = {
     ingressProfile: {
       webAppRouting: {
         enabled: true
+      }
+    }
+  }
+}
+
+resource flux 'Microsoft.KubernetesConfiguration/extensions@2023-05-01' = {
+  name: 'flux'
+  scope: aks
+  properties: {
+    extensionType: 'microsoft.flux'
+    scope: {
+      cluster: {
+        releaseNamespace: 'flux-system'
+      }
+    }
+  }
+}
+
+resource fluxConfig 'Microsoft.KubernetesConfiguration/fluxConfigurations@2023-05-01' = {
+  name: 'aks-flux-config'
+  scope: aks
+  properties: {
+    scope: 'cluster'
+    namespace: 'cluster-config'
+    sourceKind: 'GitRepository'
+    gitRepository: {
+      url: fluxGitRepositoryUrl
+      repositoryRef: {
+        branch: 'main'
+      }
+      httpsUser: 'not-relevant-since-PAT-is-used'
+    }
+    configurationProtectedSettings: {
+      httpsKey: base64(fluxGitRepositoryPat) 
+    }
+    kustomizations: {
+      apps: {
+        path: './kustomize/dev'
+        prune: true
       }
     }
   }
