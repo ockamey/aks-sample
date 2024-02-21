@@ -4,6 +4,8 @@ param location string = resourceGroup().location
 param fluxGitRepositoryUrl string
 @secure()
 param fluxGitRepositoryPat string
+param kvName string
+param kvRgName string
 
 resource acr 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
   name: acrName
@@ -28,6 +30,11 @@ resource aks 'Microsoft.ContainerService/managedClusters@2023-08-02-preview' = {
       managed: true
       enableAzureRBAC: true
     }
+    addonProfiles: {
+      azureKeyvaultSecretsProvider: {
+        enabled: true
+      }
+    }
     enableRBAC: true
     disableLocalAccounts: true
     agentPoolProfiles: [
@@ -46,9 +53,17 @@ resource aks 'Microsoft.ContainerService/managedClusters@2023-08-02-preview' = {
     ingressProfile: {
       webAppRouting: {
         enabled: true
+        dnsZoneResourceIds: [
+          myapiDnsZone.id
+        ]
       }
     }
   }
+}
+
+resource myapiDnsZone 'Microsoft.Network/dnsZones@2018-05-01' = {
+  name: 'myapi.com'
+  location: 'global'
 }
 
 resource flux 'Microsoft.KubernetesConfiguration/extensions@2023-05-01' = {
@@ -107,5 +122,26 @@ module aksRbacClusterAdminRoleAssignmentModule 'modules/aksRbac.bicep' = {
     roleId: 'b1ff04bb-8a4e-4dc4-8eb5-8693973ce19b' // Azure Kubernetes Service RBAC Cluster Admin
     principalId: '0a97ce96-3a13-4d64-86aa-cbb0f5c014ab' // AKS Admin Group Object Id
     principalType: 'Group'
+  }
+}
+
+module kvRouteAddOnRbacKvSecretsUserRoleAssignmentModule 'modules/kvRbac.bicep' = {
+  name: 'kvRouteAddOnRbacKvSecretsUserRoleAssignmentModule-${deployment().name}'
+  scope: resourceGroup(kvRgName)
+  params: {
+    kvName: kvName
+    principalId: aks.properties.ingressProfile.webAppRouting.identity.objectId
+    principalType: 'ServicePrincipal'
+    roleId: '4633458b-17de-408a-b874-0445c86b69e6' //Key Vault Secrets User
+  }
+}
+
+module myApiDnsZoneContributorRoleAssignmentModule 'modules/dnsRbac.bicep' = {
+  name: 'myApiDnsZoneContributorRoleAssignmentModule-${deployment().name}'
+  params: {
+    dnsName: myapiDnsZone.name
+    principalId: aks.properties.ingressProfile.webAppRouting.identity.objectId
+    principalType: 'ServicePrincipal'
+    roleId: 'befefa01-2a29-4197-83a8-272ff33ce314' //DNS Zone Contributor
   }
 }
