@@ -22,6 +22,10 @@ resource aks 'Microsoft.ContainerService/managedClusters@2023-08-02-preview' = {
     type: 'SystemAssigned'
   }
   properties: {
+    networkProfile: {
+      networkPlugin: 'azure'
+      networkPluginMode: 'overlay'
+    }
     autoUpgradeProfile: {
       upgradeChannel: 'patch'
     }
@@ -45,7 +49,7 @@ resource aks 'Microsoft.ContainerService/managedClusters@2023-08-02-preview' = {
         ]
         osType: 'Linux'
         mode: 'System'
-        count: 2
+        count: 1
         vmSize: 'Standard_B2s'
         maxPods: 110
       }
@@ -58,6 +62,22 @@ resource aks 'Microsoft.ContainerService/managedClusters@2023-08-02-preview' = {
         ]
       }
     }
+  }
+}
+
+resource winNodePool 'Microsoft.ContainerService/managedClusters/agentPools@2023-11-01' = {
+  name: 'win'
+  parent: aks
+  properties: {
+    availabilityZones: [
+      '1', '2', '3'
+    ]
+    osType: 'Windows'
+    osSKU: 'Windows2019'
+    mode: 'User'
+    count: 1
+    vmSize: 'Standard_B2ms'
+    maxPods: 110
   }
 }
 
