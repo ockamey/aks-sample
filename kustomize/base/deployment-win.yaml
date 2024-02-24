@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: windeployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: win
+  template:
+    metadata:
+      name: winpod
+      labels:
+        app: win
+    spec:
+      nodeSelector:
+        "kubernetes.io/os": windows
+      containers:
+      - name: wincontainer
+        image: mcr.microsoft.com/windows/nanoserver:ltsc2019
+        command: ["ping"]
+        args: ["-t", "localhost"]
+        resources:
+          limits:
+            cpu: "0.5"
+            memory: 800M

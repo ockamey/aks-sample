@@ -76,7 +76,7 @@ resource winNodePool 'Microsoft.ContainerService/managedClusters/agentPools@2023
     osSKU: 'Windows2019'
     mode: 'User'
     count: 1
-    vmSize: 'Standard_B2ms'
+    vmSize: 'Standard_B2s'
     maxPods: 110
   }
 }

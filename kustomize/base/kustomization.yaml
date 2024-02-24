@@ -4,3 +4,4 @@ resources:
 - config-map.yaml
 - namespace.yaml
 - ingress.yaml
+- deployment-win.yaml
