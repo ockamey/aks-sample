@@ -6,6 +6,7 @@ param fluxGitRepositoryUrl string
 param fluxGitRepositoryPat string
 param kvName string
 param kvRgName string
+param workloadIdentityName string
 
 resource acr 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
   name: acrName
@@ -15,6 +16,11 @@ resource acr 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
   }
 }
 
+resource workloadIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
+  name: workloadIdentityName
+  location: location
+}
+
 resource aks 'Microsoft.ContainerService/managedClusters@2023-08-02-preview' = {
   name: clusterName
   location: location
@@ -22,6 +28,7 @@ resource aks 'Microsoft.ContainerService/managedClusters@2023-08-02-preview' = {
     type: 'SystemAssigned'
   }
   properties: {
+    kubernetesVersion: '1.28'
     networkProfile: {
       networkPlugin: 'azure'
       networkPluginMode: 'overlay'
@@ -39,6 +46,14 @@ resource aks 'Microsoft.ContainerService/managedClusters@2023-08-02-preview' = {
         enabled: true
       }
     }
+    securityProfile: {
+      workloadIdentity: {
+        enabled: true
+      }
+    }
+    oidcIssuerProfile: {
+      enabled: true
+    }
     enableRBAC: true
     disableLocalAccounts: true
     agentPoolProfiles: [
@@ -49,7 +64,7 @@ resource aks 'Microsoft.ContainerService/managedClusters@2023-08-02-preview' = {
         ]
         osType: 'Linux'
         mode: 'System'
-        count: 1
+        count: 2
         vmSize: 'Standard_B2s'
         maxPods: 110
       }
@@ -76,7 +91,7 @@ resource winNodePool 'Microsoft.ContainerService/managedClusters/agentPools@2023
     osSKU: 'Windows2019'
     mode: 'User'
     count: 1
-    vmSize: 'Standard_B2s'
+    vmSize: 'Standard_B2ms'
     maxPods: 110
   }
 }
@@ -107,6 +122,7 @@ resource fluxConfig 'Microsoft.KubernetesConfiguration/fluxConfigurations@2023-0
     namespace: 'cluster-config'
     sourceKind: 'GitRepository'
     gitRepository: {
+      syncIntervalInSeconds: 180
       url: fluxGitRepositoryUrl
       repositoryRef: {
         branch: 'main'
