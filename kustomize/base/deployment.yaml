@@ -11,7 +11,9 @@ spec:
     metadata:
       labels:
         app: myapi 
+        azure.workload.identity/use: "true"
     spec:
+      serviceAccountName: service-account
       containers:
         - name: myapi 
           image: myapi
@@ -23,6 +25,11 @@ spec:
               configMapKeyRef:
                 name: myapi
                 key: env_var
+          - name: KEY_VAULT_NAME
+            valueFrom:
+              configMapKeyRef:
+                name: myapi
+                key: kv_name
           resources:
             limits:
               memory: "200Mi"

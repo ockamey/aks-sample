@@ -5,6 +5,13 @@ namespace: dev
 images:
 - name: myapi
   newName: acrdevuks001.azurecr.io/myapi
-  newTag: 1.0.0
+  newTag: 1.0.5
+configMapGenerator:
+  - name: myapi
+    literals:
+      - env_var=test variable
+      - kv_name=<key vault instance name>
 resources:
 - ../base
+patchesStrategicMerge:
+- set-client-id-service-account.yaml
