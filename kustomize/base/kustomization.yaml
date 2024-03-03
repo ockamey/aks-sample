@@ -5,3 +5,4 @@ resources:
 - namespace.yaml
 - ingress.yaml
 - deployment-win.yaml
+- service-account.yaml
