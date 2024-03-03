@@ -7,6 +7,9 @@ param fluxGitRepositoryPat string
 param kvName string
 param kvRgName string
 param workloadIdentityName string
+param serviceAccountNamespace string
+param serviceAccountName string
+param aksAdminGroupObjectId string
 
 resource acr 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
   name: acrName
@@ -14,11 +17,6 @@ resource acr 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
   sku: {
     name: 'Basic'
   }
-}
-
-resource workloadIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
-  name: workloadIdentityName
-  location: location
 }
 
 resource aks 'Microsoft.ContainerService/managedClusters@2023-08-02-preview' = {
@@ -76,6 +74,22 @@ resource aks 'Microsoft.ContainerService/managedClusters@2023-08-02-preview' = {
           myapiDnsZone.id
         ]
       }
+    }
+  }
+}
+
+resource workloadIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
+  name: workloadIdentityName
+  location: location
+
+  resource workloadIdentityCredentials 'federatedIdentityCredentials@2023-01-31' = {
+    name: 'federated-credentials'
+    properties: {
+      audiences: [
+        'api://AzureADTokenExchange'
+      ]
+      issuer: aks.properties.oidcIssuerProfile.issuerURL 
+      subject: 'system:serviceaccount:${serviceAccountNamespace}:${serviceAccountName}'
     }
   }
 }
@@ -156,7 +170,7 @@ module aksRbacClusterAdminRoleAssignmentModule 'modules/aksRbac.bicep' = {
   params: {
     aksName: aks.name
     roleId: 'b1ff04bb-8a4e-4dc4-8eb5-8693973ce19b' // Azure Kubernetes Service RBAC Cluster Admin
-    principalId: '0a97ce96-3a13-4d64-86aa-cbb0f5c014ab' // AKS Admin Group Object Id
+    principalId: aksAdminGroupObjectId // AKS Admin Group Object Id
     principalType: 'Group'
   }
 }
@@ -167,6 +181,17 @@ module kvRouteAddOnRbacKvSecretsUserRoleAssignmentModule 'modules/kvRbac.bicep' 
   params: {
     kvName: kvName
     principalId: aks.properties.ingressProfile.webAppRouting.identity.objectId
+    principalType: 'ServicePrincipal'
+    roleId: '4633458b-17de-408a-b874-0445c86b69e6' //Key Vault Secrets User
+  }
+}
+
+module workloadIdentityKvSecretsUserRoleAssignmentModule 'modules/kvRbac.bicep' = {
+  name: 'workloadIdentityKvSecretsUserRoleAssignmentModule-${deployment().name}'
+  scope: resourceGroup(kvRgName)
+  params: {
+    kvName: kvName
+    principalId: workloadIdentity.properties.clientId
     principalType: 'ServicePrincipal'
     roleId: '4633458b-17de-408a-b874-0445c86b69e6' //Key Vault Secrets User
   }
